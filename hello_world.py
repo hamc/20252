@@ -5,8 +5,7 @@ def main():
     """
     Função principal que exibe uma mensagem de Hello World
     """
-    print("Hello, World!")
-    print("Olá, Mundo!")
+    print("Hello, World!"
 
 if __name__ == "__main__":
     main() 
