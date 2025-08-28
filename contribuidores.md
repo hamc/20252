@@ -1,2 +1,5 @@
-heitor cardozo
+
+- Heitor Cardozo
+- Amanda Ferreira
+
 
