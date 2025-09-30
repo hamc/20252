@@ -1,0 +1,23 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: Exemplo simples de criação de uma instância EC2 chamada teste
+
+Parameters:
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Nome do par de chaves existente para acesso SSH
+
+Resources:
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro
+      KeyName: !Ref KeyName
+      ImageId: ami-08c40ec9ead489470 # Amazon Linux 2 em us-east-1
+      Tags:
+        - Key: Name
+          Value: teste
+
+Outputs:
+  InstanceId:
+    Description: ID da instância criada
+    Value: !Ref EC2Instance
