@@ -1,0 +1,82 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Infraestrutura do Microservi├ºo de Catalogo de Produtos"
+
+Parameters:
+  KeyName:
+    Description: Nome do par de chaves para acessar a instanncia EC2
+    Type: AWS::EC2::KeyPair::KeyName
+
+  InstanceType:
+    Description: Tipo da instanncia EC2
+    Type: String
+    Default: t2.micro
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t3.micro
+      - t3.small
+    ConstraintDescription: Deve ser um tipo de instanncia EC2 valido.
+
+Resources:
+  # Security Group na VPC existente
+  CatalogSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Permitir acesso HTTP e SSH
+      VpcId: vpc-0088037924495c9f7
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+
+  # Subnet p├║blica na VPC existente
+  CatalogSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: vpc-0088037924495c9f7
+      CidrBlock: 10.0.0.0/24
+      MapPublicIpOnLaunch: true
+      AvailabilityZone: !Select [0, !GetAZs '']
+
+  # Inst├óncia EC2
+  CatalogEC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: !Ref InstanceType
+      KeyName: !Ref KeyName
+      ImageId: ami-0c02fb55956c7d316  # Amazon Linux 2
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref CatalogSubnet
+          GroupSet:
+            - !Ref CatalogSecurityGroup
+      Tags:
+        - Key: Name
+          Value: CatalogoEC2
+
+  # Bucket S3
+  ProductImagesBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: !Sub "catalogo-produtos-${AWS::AccountId}-${AWS::Region}"
+      AccessControl: Private
+      VersioningConfiguration:
+        Status: Enabled
+      Tags:
+        - Key: Name
+          Value: CatalogoImagens
+
+Outputs:
+  EC2PublicIP:
+    Description: Endere├ºo IP p├║blico da EC2
+    Value: !GetAtt CatalogEC2Instance.PublicIp
+
+  S3BucketName:
+    Description: Nome do bucket S3
+    Value: !Ref ProductImagesBucket
