@@ -1,0 +1,264 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Grupo 3 - Microserviço de Pagamentos (AWS Free Tier Optimized)"
+
+Parameters:
+  VpcId:
+    Type: String
+    Description: VPC ID existente fornecido pelo professor
+    Default: vpc-00db397b
+    
+  SubnetId:
+    Type: String
+    Description: Subnet ID existente fornecida pelo professor
+    Default: subnet-921f36f6
+    
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Nome do par de chaves EC2 para acesso SSH
+    Default: fatec5
+    
+  DBUsername:
+    Type: String
+    Description: Nome de usuário para PostgreSQL
+    Default: postgres
+    MinLength: 1
+    MaxLength: 16
+    
+  DBPassword:
+    Type: String
+    Description: Senha para PostgreSQL (min 8 caracteres)
+    NoEcho: true
+    MinLength: 8
+    MaxLength: 41
+    Default: postgres123
+
+Resources:
+  # Subnet adicional para RDS (em zona de disponibilidade diferente)
+  RDSSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      VpcId: !Ref VpcId
+      CidrBlock: 172.30.10.0/24
+      AvailabilityZone: us-east-1b
+      Tags:
+        - Key: Name
+          Value: Subnet-RDS-Grupo3-Pagamentos
+
+  # Security Group para EC2
+  EC2SecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG para EC2 Microservico Pagamentos - Grupo 3
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH
+        - IpProtocol: tcp
+          FromPort: 80
+          ToPort: 80
+          CidrIp: 0.0.0.0/0
+          Description: HTTP
+        - IpProtocol: tcp
+          FromPort: 3000
+          ToPort: 3000
+          CidrIp: 0.0.0.0/0
+          Description: API Pagamentos
+      Tags:
+        - Key: Name
+          Value: SG-EC2-Grupo3-Pagamentos
+        - Key: Project
+          Value: Microserviços-Ecommerce
+
+  # Security Group para RDS
+  RDSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: SG para RDS PostgreSQL - Grupo 3
+      VpcId: !Ref VpcId
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 5432
+          ToPort: 5432
+          SourceSecurityGroupId: !Ref EC2SecurityGroup
+          Description: PostgreSQL do EC2
+      Tags:
+        - Key: Name
+          Value: SG-RDS-Grupo3-Pagamentos
+        - Key: Project
+          Value: Microserviços-Ecommerce
+
+  # Instância EC2 (SEMPRE GRATUITO)
+  EC2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      InstanceType: t2.micro  # SEMPRE GRATUITO: 750 horas/mês para sempre
+      KeyName: !Ref KeyName
+      ImageId: ami-08c40ec9ead489470  # Amazon Linux 2 AMI
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: true
+          DeviceIndex: 0
+          SubnetId: !Ref SubnetId
+          GroupSet:
+            - !Ref EC2SecurityGroup
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash
+          yum update -y
+          
+          # Instalar Docker
+          yum install -y docker
+          service docker start
+          usermod -a -G docker ec2-user
+          
+          # Instalar Node.js para aplicação de pagamentos
+          curl -sL https://rpm.nodesource.com/setup_18.x | bash -
+          yum install -y nodejs
+          
+          # Instalar PostgreSQL client
+          yum install -y postgresql
+          
+          # Criar estrutura da aplicação
+          mkdir -p /home/ec2-user/payment-service
+          chown ec2-user:ec2-user /home/ec2-user/payment-service
+          
+          # Arquivo de configuração com endpoint RDS
+          cat > /home/ec2-user/payment-service/.env << 'EOF'
+          # Configuração do Banco de Dados
+          DB_HOST=${RDSInstance.Endpoint.Address}
+          DB_PORT=5432
+          DB_NAME=pagamentos
+          DB_USER=${DBUsername}
+          DB_PASSWORD=${DBPassword}
+          
+          # Configuração da API
+          PORT=3000
+          NODE_ENV=production
+          EOF
+          
+          # Script de exemplo para teste de conexão
+          cat > /home/ec2-user/payment-service/test-db.js << 'EOF'
+          const { Client } = require('pg');
+          
+          const client = new Client({
+            host: process.env.DB_HOST,
+            port: process.env.DB_PORT,
+            database: process.env.DB_NAME,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+          });
+          
+          async function testConnection() {
+            try {
+              await client.connect();
+              console.log('✅ Conexão com PostgreSQL estabelecida!');
+              
+              // Criar tabela de exemplo
+              await client.query(`
+                CREATE TABLE IF NOT EXISTS transactions (
+                  id SERIAL PRIMARY KEY,
+                  amount DECIMAL(10,2) NOT NULL,
+                  currency VARCHAR(3) DEFAULT 'BRL',
+                  status VARCHAR(20) DEFAULT 'pending',
+                  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                );
+              `);
+              
+              console.log('✅ Tabela transactions criada/verificada!');
+              await client.end();
+            } catch (err) {
+              console.error('❌ Erro na conexão:', err);
+            }
+          }
+          
+          testConnection();
+          EOF
+          
+          chown -R ec2-user:ec2-user /home/ec2-user/payment-service
+      Tags:
+        - Key: Name
+          Value: EC2-Grupo3-Pagamentos
+        - Key: Project
+          Value: Microserviços-Ecommerce
+        - Key: Service
+          Value: payment-microservice
+
+  # DB Subnet Group (necessario para RDS - 2 subnets em AZs diferentes)
+  DBSubnetGroup:
+    Type: AWS::RDS::DBSubnetGroup
+    Properties:
+      DBSubnetGroupDescription: Subnet Group para RDS PostgreSQL - Grupo 3
+      SubnetIds:
+        - !Ref SubnetId
+        - !Ref RDSSubnet
+      Tags:
+        - Key: Name
+          Value: DBSubnetGroup-Grupo3-Pagamentos
+
+  # RDS PostgreSQL (FREE TIER - 750h/mes no primeiro ano)
+  RDSInstance:
+    Type: AWS::RDS::DBInstance
+    DeletionPolicy: Delete
+    Properties:
+      DBInstanceIdentifier: grupo3-pagamentos-db
+      DBName: pagamentos
+      DBInstanceClass: db.t3.micro
+      Engine: postgres
+      EngineVersion: "12.22"
+      MasterUsername: !Ref DBUsername
+      MasterUserPassword: !Ref DBPassword
+      AllocatedStorage: 20
+      StorageType: gp2
+      DBSubnetGroupName: !Ref DBSubnetGroup
+      VPCSecurityGroups:
+        - !Ref RDSSecurityGroup
+      BackupRetentionPeriod: 0
+      MultiAZ: false
+      PubliclyAccessible: false
+      DeletionProtection: false
+      Tags:
+        - Key: Name
+          Value: RDS-Grupo3-Pagamentos
+        - Key: Project
+          Value: Microserviços-Ecommerce
+        - Key: Service
+          Value: payment-database
+
+Outputs:
+  EC2InstanceId:
+    Description: ID da instância EC2
+    Value: !Ref EC2Instance
+
+  EC2PublicIP:
+    Description: IP público da instância EC2
+    Value: !GetAtt EC2Instance.PublicIp
+
+  EC2PublicDNS:
+    Description: DNS público da instância EC2
+    Value: !GetAtt EC2Instance.PublicDnsName
+
+  RDSEndpoint:
+    Description: Endpoint do PostgreSQL
+    Value: !GetAtt RDSInstance.Endpoint.Address
+
+  RDSPort:
+    Description: Porta do PostgreSQL
+    Value: !GetAtt RDSInstance.Endpoint.Port
+
+  DatabaseName:
+    Description: Nome do banco de dados
+    Value: pagamentos
+
+  SSHCommand:
+    Description: Comando SSH para conectar na instância
+    Value: !Sub "ssh -i ${KeyName}.pem ec2-user@${EC2Instance.PublicIp}"
+
+  ApplicationURL:
+    Description: URL da aplicação de pagamentos
+    Value: !Sub "http://${EC2Instance.PublicIp}:3000"
+
+  FreeTierCompliant:
+    Description: Este template usa apenas recursos do AWS Free Tier
+    Value: "✅ 100% Free Tier Compatible"
