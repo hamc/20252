@@ -3,7 +3,7 @@ name: Teste Readme Yaml
 on:
   pull_request:
     branches:
-      - gabriel-siqueira
+      - gabriel-siqueira-teste-workflow
 
 jobs:
   check-super:
