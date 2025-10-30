@@ -1,0 +1,19 @@
+name: Hello World Pipeline
+
+# Dispara a pipeline em qualquer push
+on:
+  push:
+
+jobs:
+  say-hello:
+    name: Say Hello
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo 1: Checkout do código (opcional, mas é boa prática)
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Passo 2: Exibir uma mensagem
+      - name: Print Hello World
+        run: echo "👋 Hello World from GitHub Actions!"
