@@ -1,0 +1,21 @@
+name: README CHECK
+
+#dispara a pipeline em qualquer push
+on: 
+  pull_request:
+    branches:
+      - enzo-teste
+
+jobs:
+ say-hello:
+  name: CHECAR README
+  runs-on: ubuntu-latest
+
+  steps:
+   #passo 1: checkout do codigo (opcional, mas boa pratica)
+   - name: Checkout code
+     uses: actions/checkout@v4
+
+   #passo 2: exibir uma mensagem
+   - name: VERIFICAR PALAVRA NO README
+     run: grep -q 'super' README.md
