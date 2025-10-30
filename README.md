@@ -1,0 +1,3 @@
+# Check text 'super'
+
+super
