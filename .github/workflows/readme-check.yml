@@ -1,4 +1,4 @@
-name: README CHECK
+name: CHECK-README
 
 #dispara a pipeline somente no pull request
 on: 
