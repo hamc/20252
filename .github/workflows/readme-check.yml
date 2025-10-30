@@ -1,6 +1,6 @@
 name: README CHECK
 
-#dispara a pipeline em qualquer push
+#dispara a pipeline somente no pull request
 on: 
   pull_request:
     branches:
@@ -8,7 +8,7 @@ on:
 
 jobs:
  say-hello:
-  name: CHECAR README
+  name: CHECAR-README
   runs-on: ubuntu-latest
 
   steps:
@@ -16,6 +16,6 @@ jobs:
    - name: Checkout code
      uses: actions/checkout@v4
 
-   #passo 2: exibir uma mensagem
+   #passo 2: verificar palavra no readme
    - name: VERIFICAR PALAVRA NO README
      run: grep -q 'super' README.md
