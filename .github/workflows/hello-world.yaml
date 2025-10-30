@@ -16,4 +16,4 @@ jobs:
 
       # Passo 2: Exibir uma mensagem
       - name: Print Hello World
-        run: echo "👋 Hello World from GitHub Actions!"
+        run: exit 1
