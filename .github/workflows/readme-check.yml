@@ -3,8 +3,7 @@ name: CHECK-README
 #dispara a pipeline somente no pull request
 on: 
   pull_request:
-    branches:
-      - enzo-teste
+
 
 jobs:
  CHECK-README:
