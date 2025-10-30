@@ -17,4 +17,4 @@ jobs:
 
    #passo 2: verificar palavra no readme
    - name: VERIFICAR PALAVRA NO README
-     run: grep -q 'super' README.md
+     run: grep -q 'super' README.txt
