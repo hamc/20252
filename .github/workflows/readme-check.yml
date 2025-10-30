@@ -7,8 +7,8 @@ on:
       - enzo-teste
 
 jobs:
- say-hello:
-  name: CHECAR-README
+ CHECK-README:
+  name: CHECK-README
   runs-on: ubuntu-latest
 
   steps:
