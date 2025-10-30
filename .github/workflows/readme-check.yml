@@ -1,0 +1,20 @@
+name: CHECK-README
+
+#dispara a pipeline somente no pull request
+on: 
+  pull_request:
+
+
+jobs:
+ CHECK-README:
+  name: CHECK-README
+  runs-on: ubuntu-latest
+
+  steps:
+   #passo 1: checkout do codigo (opcional, mas boa pratica)
+   - name: Checkout code
+     uses: actions/checkout@v4
+
+   #passo 2: verificar palavra no readme
+   - name: VERIFICAR PALAVRA NO README
+     run: grep -q 'super' README.txt
