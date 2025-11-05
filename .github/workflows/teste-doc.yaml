@@ -1,0 +1,21 @@
+name: Teste de Documentação
+
+on:
+  pull_request:
+
+jobs:
+  verificar-readme:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v4
+
+      - name: Verificar se a palavra 'super' aparece no README.md (case-insensitive)
+        run: |
+          if grep -qi 'super' README.md; 
+          then
+            echo "✅ A palavra 'super' foi encontrada no README.md."
+          else
+            echo "❌ A palavra 'super' não foi encontrada no README.md."
+            exit 1
+          fi
