@@ -1,3 +1,1 @@
-Heitor Cardozo
-Amanda Ferreira
-Gabriel da Silva Siqueira
+Jocimar Alves Pego
