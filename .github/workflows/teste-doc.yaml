@@ -1,0 +1,26 @@
+name: Validar Documentação
+
+on:
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  verificar_palavra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: ?? Checkout do Código
+        uses: actions/checkout@v4
+
+      - name: ?? Verificar 'super' no README.md
+        id: verificar_super
+        run: |
+          grep -q 'super' README.md
+          
+          EXIT_CODE=False
+          
+          if [  -ne 0 ]; then
+            echo "::error::A palavra 'super' NÃO foi encontrada no arquivo README.md. Por favor, adicione-a."
+            exit 1
+          else
+            echo "? A palavra 'super' foi encontrada no README.md. Verificação de documentação passou."
+          fi
