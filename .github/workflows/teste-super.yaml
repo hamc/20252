@@ -1,0 +1,20 @@
+name: checar-super
+
+on:
+  pull_request:
+
+jobs:
+  check-super:
+    name: Check super
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do código
+        uses: actions/checkout@v3
+        
+      - name: Verificar palavra 'super'
+        run: |
+          if ! grep -q 'super' README.md; 
+          then
+            echo "A palavra 'super' não foi encontrada no arquivo README.md"
+            exit 1
+          fi
