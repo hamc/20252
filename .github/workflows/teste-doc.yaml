@@ -1,0 +1,30 @@
+name: teste-doc
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  verifica-readme:
+    name: Verifica se README.md contém "super"
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v4
+
+      - name: Checar existência do README.md
+        run: |
+          if [ ! -f README.md ]; then
+            echo "ERRO: README.md não encontrado no repositório."
+            exit 1
+          fi
+
+      - name: Verificar palavra 'super' em README.md
+        run: |
+          if grep -q 'super' README.md; then
+            echo "OK: palavra 'super' encontrada em README.md."
+          else
+            echo "ERRO: palavra 'super' NÃO encontrada em README.md."
+            exit 1
+          fi
