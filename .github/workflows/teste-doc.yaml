@@ -1,0 +1,21 @@
+name: Verificar README
+
+on:
+  pull_request:
+
+jobs:
+  verificar-palavra:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Baixar código do repositório
+        uses: actions/checkout@v4
+
+      - name: Verificar se a palavra "super" aparece no README.md
+        run: |
+          if grep -q "super" README.md; then
+            echo "A palavra 'super' foi encontrada!"
+          else
+            echo "A palavra 'super' NÃO foi encontrada!"
+            exit 1
+          fi
